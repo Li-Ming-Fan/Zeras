@@ -25,18 +25,17 @@ import queue as Queue
 
 
 class DataBatcher(object):    
-    """ This class is task-agnostic
+    """ This class is meant to be task-agnostic
     """    
     BATCH_QUEUE_MAX = 300       # max number of batches the batch_queue can hold
     BATCH_TIME_OUT = 5          # seconds
     EXAMPLE_TIME_OUT = 2
     
-    def __init__(self, data_path_e, example_loader, batch_standardizer,
+    def __init__(self, example_iter, batch_standardizer,
                  batch_size, single_pass, with_bucket=False, worker_type="thread"):
         """
         """
-        self.data_path_e = data_path_e
-        self.example_loader = example_loader
+        self.example_iter = example_iter
         self.batch_standardizer = batch_standardizer
         self.batch_size = batch_size
         self.with_bucket = with_bucket
@@ -117,11 +116,10 @@ class DataBatcher(object):
     # example
     def fill_example_queue(self):
         """
-        """        
-        exam_from_loader = self.example_loader(self._data_path_e, self.single_pass)    
+        """
         while True:
             try:
-                base_example = next(exam_from_loader)
+                base_example = next(self.example_iter)
                 # print(base_example)
                 #
             except BaseException: # if there is no more example:                
