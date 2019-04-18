@@ -1,0 +1,10 @@
+include LICENSE
+include README.md
+include MANIFEST.in
+recursive-include * Makefile
+recursive-include * make.bat
+recursive-include demo *.py
+recursive-include docs *.py
+recursive-include docs *.md
+recursive-exclude * *.py[co]
+recursive-exclude * __pycache__

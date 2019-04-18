@@ -1,2 +1,2 @@
 # Zeras
-tensorflow wrapper
+A simple tensorflow wrapper

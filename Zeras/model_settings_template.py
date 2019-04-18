@@ -28,7 +28,8 @@ class ModelSettingsTemplate(object):
         #
 
         # train
-        self.gpu_available = "0"
+        self.gpu_available = "0"      # could be specified in args
+        self.gpu_batch_split = None   # list, for example, [12, 20]; if None, batch split evenly
         self.gpu_mem_growth = True
         self.log_device = False
         self.soft_placement = True
@@ -65,9 +66,8 @@ class ModelSettingsTemplate(object):
                                   'dcd_seq:0', 'dcd_seq_mask:0',
                                   'labels_seq:0', 'labels_mask:0']
         self.outputs_train_name = ['logits:0']
-        self.loss_name = 'loss/loss:0'
-        self.metric_name = 'metric/metric:0'
         self.use_metric = True
+        
         self.debug_tensors_name = ['loss/loss_batch:0',
                                    'logits:0',
                                    'logits_normed:0',
@@ -96,7 +96,16 @@ class ModelSettingsTemplate(object):
         
         # gpu
         self.num_gpu = len(self.gpu_available.split(","))
-        
+        if self.num_gpu > 1:
+            #
+            if self.gpu_batch_split is None:
+                self.gpu_batch_split = [self.batch_size//self.num_gpu] * self.num_gpu
+            #
+            str_info = "make sure that self.num_gpu == len(self.gpu_batch_split)"
+            assert self.num_gpu == len(self.gpu_batch_split), str_info
+            str_info = "make sure that self.batch_size == sum(self.gpu_batch_split)"
+            assert self.batch_size == sum(self.gpu_batch_split), str_info
+            
         # directories
         if self.model_dir is None:
             self.model_dir = os.path.join(self.base_dir, 'model_' + self.model_tag)
