@@ -1,7 +1,7 @@
 include LICENSE
 include README.md
 include MANIFEST.in
-recursive-include * Makefile
+recursive-include * makefile
 recursive-include * make.bat
 recursive-include demo *.py
 recursive-include docs *.py

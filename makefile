@@ -15,11 +15,13 @@ pack:
 	python setup.py sdist --formats=gztar
 
 upload:
-	python setup.py sdist --formats=gztar register upload
+	python setup.py sdist --formats=gztar
+	twine upload dist/*
 
 test:
-	python setup.py sdist --formats=gztar register -r pypitest upload -r pypitest
+	python setup.py sdist --formats=gztar
+	python -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
 clean:
-	rm -rf dist Zeras.egg-info build
+	rm -rf dist *.egg-info build
 	find . -name '*.py[co]' | xargs rm -f
