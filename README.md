@@ -39,7 +39,7 @@ make clean install
 
 </br>
 
-Or just incorporate the diractory Zeras/ to you project.
+Or just incorporate the directory Zeras/ to your project.
 
 </br>
 
