@@ -16,8 +16,6 @@ A simple tensorflow wrapper
 ```
 
 
-</br>
-
 ## Installation
 
 From PyPI distribution system:
@@ -26,7 +24,6 @@ From PyPI distribution system:
 pip install Zeras
 ```
 
-</br>
 
 Or from the code:
 
@@ -36,11 +33,9 @@ cd Zeras
 make clean install
 ```
 
-</br>
 
 Or just incorporate the directory Zeras/ to your project.
 
-</br>
 
 ## Usage
 
@@ -50,7 +45,6 @@ https://github.com/Li-Ming-Fan/text_classification
 
 https://github.com/Li-Ming-Fan/transformer-tensorflow
 
-</br>
 
 
 ## Acknowledgment
