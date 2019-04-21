@@ -12,9 +12,8 @@ from Zeras.layers import get_mask_mat_from_mask_seq
 # from Zeras.layers import get_mask_mat_subsequent
 from Zeras.layers import get_list_subs_masks, get_list_dcd_crs_masks
 
-from encoder_decoder import EncoderDecoder, Generator
-from encoder_decoder import Encoder, Decoder
-from encoder_decoder import EncoderLayer, DecoderLayer
+from model_encoder_decoder import ModelEncoderDecoder, Generator
+from model_encoder_decoder import Encoder, Decoder
 
 
 class ModelGraph():
@@ -64,20 +63,13 @@ class ModelGraph():
         #
         with tf.variable_scope("encoder_decoder"):
 
-            att_args = (settings.num_heads, settings.num_units, keep_prob)
-            ffd_args = (dim_all, dim_all, keep_prob)
-            src_args = (settings.num_heads, settings.num_units, keep_prob)
-            #
             emb_trans = lambda x: get_emb_positioned(x, emb_mat, pe_mat)
             
-            encoder = Encoder(settings.num_layers, EncoderLayer,
-                              (dim_all, att_args, ffd_args, keep_prob))
-            decoder = Decoder(settings.num_layers, DecoderLayer,
-                              (dim_all, att_args, src_args, ffd_args, keep_prob))
+            encoder = Encoder(emb_trans, keep_prob, settings)
+            decoder = Decoder(emb_trans, keep_prob, settings)
+            generator = Generator(dim_all, settings.vocab.size(), emb_mat=emb_mat)
             
-            model = EncoderDecoder(encoder, decoder, emb_trans, emb_trans,
-                                   Generator(dim_all, settings.vocab.size(),
-                                             emb_mat=emb_mat))    #
+            model = ModelEncoderDecoder(encoder, decoder, generator)
             #
             # model vars are all defined by now
             # graph yet
@@ -95,7 +87,7 @@ class ModelGraph():
         if settings.is_train:
             out = model.forward(src_seq, src_mask, dcd_seq, dcd_mask, crs_mask)
             logits = model.generator.forward(out)
-            logits_normed = tf.nn.softmax(logits, name = 'logits')
+            logits_normed = tf.nn.softmax(logits, -1, name = 'logits')
             preds = tf.argmax(logits, -1, name="preds")
         else:
             if settings.beam_width == 1:
