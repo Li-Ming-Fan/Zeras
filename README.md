@@ -2,46 +2,42 @@
 
 A simple tensorflow wrapper
 
+
 ## Description
 
+```
+└── Zeras
+    ├── data_batcher.py
+    ├── __init__.py
+    ├── layers.py
+    ├── LICENSE
+    ├── model_settings_template.py
+    ├── model_wrapper.py
+    └── vocab.py
+```
 
-├── LICENSE </br>
-├── makefile </br>
-├── MANIFEST.in </br>
-├── README.md </br>
-├── setup.py </br>
-└── Zeras </br>
-&nbsp; &nbsp; &nbsp;  ├── data_batcher.py </br>
-&nbsp; &nbsp; &nbsp;  ├── __init__.py </br>
-&nbsp; &nbsp; &nbsp;  ├── layers.py </br>
-&nbsp; &nbsp; &nbsp;  ├── model_settings_template.py </br>
-&nbsp; &nbsp; &nbsp;  ├── model_wrapper.py </br>
-&nbsp; &nbsp; &nbsp;  └── vocab.py </br>
-
-
-</br>
 
 ## Installation
 
 From PyPI distribution system:
 
+```
 pip install Zeras
+```
 
-</br>
 
 Or from the code:
 
+```
 git clone https://github.com/Li-Ming-Fan/Zeras
-
 cd Zeras
-
 make clean install
+```
 
-</br>
 
 Or just incorporate the directory Zeras/ to your project.
 
-</br>
+
 
 ## Usage
 
@@ -51,8 +47,8 @@ https://github.com/Li-Ming-Fan/text_classification
 
 https://github.com/Li-Ming-Fan/transformer-tensorflow
 
-</br>
 
+</br>
 
 ## Acknowledgment
 
