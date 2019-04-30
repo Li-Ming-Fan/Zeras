@@ -6,14 +6,16 @@ A simple tensorflow wrapper
 ## Description
 
 ```
-└── Zeras
-    ├── data_batcher.py
-    ├── __init__.py
-    ├── layers.py
-    ├── LICENSE
-    ├── model_settings_template.py
-    ├── model_wrapper.py
-    └── vocab.py
+├── Zeras
+│   ├── data_batcher.py
+│   ├── __init__.py
+│   ├── layers.py
+│   ├── LICENSE
+│   ├── model_graph_template.py
+│   ├── model_settings_baseboard.py
+│   ├── model_wrapper.py
+│   ├── nn.py
+│   └── vocab.py
 ```
 
 
