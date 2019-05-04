@@ -55,7 +55,7 @@ def get_position_emb_mat(max_seq_len, posi_emb_dim, posi_emb_model,
     # tf.Tensor
     pe_mat = tf.get_variable(name, shape = (max_seq_len, posi_emb_dim),
                              initializer = tf.constant_initializer(pe_all),
-                             trainable = False)
+                             trainable = trainable)
         
     return pe_mat
 
