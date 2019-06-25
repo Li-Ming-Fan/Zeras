@@ -85,6 +85,7 @@ class ModelSettingsBaseboard(object):
         self.base_dir = './task_results'
         self.model_dir = None
         self.model_name = None
+        self.model_dir_best = None
         self.pb_file = None
         self.log_dir = None
         self.log_path = None
@@ -111,16 +112,17 @@ class ModelSettingsBaseboard(object):
         # directories
         if self.model_dir is None:
             self.model_dir = os.path.join(self.base_dir, 'model_' + self.model_tag)
+        if self.model_dir_best is None: self.model_dir_best = self.model_dir + "_best"
         if self.log_dir is None: self.log_dir = os.path.join(self.base_dir, 'log')
         #
         if not os.path.exists(self.base_dir): os.mkdir(self.base_dir)
         if not os.path.exists(self.model_dir): os.mkdir(self.model_dir)
-        if not os.path.exists(self.model_dir + '_best'): os.mkdir(self.model_dir + '_best')
+        if not os.path.exists(self.model_dir_best): os.mkdir(self.model_dir_best)
         if not os.path.exists(self.log_dir): os.mkdir(self.log_dir)
         #
         # files
         if self.model_name is None: self.model_name = 'model_' + self.model_tag
-        if self.pb_file is None: self.pb_file = os.path.join(self.model_dir + '_best',
+        if self.pb_file is None: self.pb_file = os.path.join(self.model_dir_best, 
                                                              'model_saved.pb')
         #
         # logger
@@ -185,6 +187,7 @@ class ModelSettingsBaseboard(object):
         #
         info_dict["model_dir"] = None
         info_dict["model_name"] = None
+        info_dict["model_dir_best"] = None
         info_dict["pb_file"] = None
         info_dict["log_dir"] = None
         info_dict["log_path"] = None
