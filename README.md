@@ -44,7 +44,7 @@ Or just incorporate the directory Zeras/ to your project.
 
 ## Usage
 
-For usage of this package, please refer to the demo, or the repositories:
+For usage of this package, please refer to the repositories:
 
 https://github.com/Li-Ming-Fan/text_classification
 
