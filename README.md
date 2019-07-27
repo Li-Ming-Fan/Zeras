@@ -9,10 +9,10 @@ A simple tensorflow wrapper
 from Zeras.data_batcher import DataBatcher
 from Zeras.data_parallelism import DataParallelism
 
-from Zeras.vocab import Vocab
-
 from Zeras.model_settings_baseboard import ModelSettingsBaseboard
 from Zeras.model_wrapper import ModelWrapper
+
+from Zeras.vocab import Vocab
 
 import Zeras.zoo_nn as zrs_nn
 import Zeras.zoo_layers as zrs_layers

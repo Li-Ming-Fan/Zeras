@@ -107,19 +107,23 @@ class Vocab(object):
                 continue
             #            
             str_arr = line.strip().split()  #
-            # print(str_arr)
-            if len(str_arr) == 0:
+            len_arr = len(str_arr)
+            #
+            if len_arr == 0:
                 print('WARNING: len(str_arr) == 0 with prev token: %s' % token)
                 # continue
-            #
-            token = str_arr[0]      # .strip()
-            # token = line.rstrip('\n')
-            # print(token)
-            if len(str_arr) > 1:
+            elif len_arr == 1:
+                token = str_arr[0]
+                self.add(token)
+            elif len_arr == 2:
+                token = str_arr[0]
                 cnt = int(str_arr[1].strip())
                 self.add(token, cnt)
             else:
-                self.add(token)
+                print('WARNING: len(str_arr) > 2 with str_arr:')
+                print(str_arr)
+                # continue                
+            #
         #
         print('num lines: %d' % (idx + 1) )
         print('num tokens after loading: %d' % len(self.dict_id2token))
