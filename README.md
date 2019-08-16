@@ -55,6 +55,6 @@ https://github.com/Li-Ming-Fan/transformer-tensorflow
 
 ## Acknowledgment
 
-We thank the authors and contributors of TensorFlow, Keras, PyTorch and other DL platforms, and other DLearners. The name "Zeras" is a variant from Keras. We use "Z" because it makes the direcory Zeras/ always display in the last (or first) and do not intersect other directories.
+The name "Zeras" is a variant from Keras. We use "Z" because it makes the direcory Zeras/ always display in the last (or first) and do not intersect other directories.
 
 

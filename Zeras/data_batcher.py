@@ -23,6 +23,7 @@ import queue as Queue
 # from multiprocessing import Process        # True Process
 # from multiprocessing.dummy import Process    # A wrapper of Thread
 
+'''
 def get_generator_for_list(list_data):
     """
     """
@@ -32,6 +33,16 @@ def get_generator_for_list(list_data):
             if single_pass: break
             #
     return gen
+'''
+
+def run_through_list_data(list_data, single_pass):
+    """
+    """
+    while True:
+        #
+        for item in list_data: yield item
+        if single_pass: break
+        #
 
 #
 class DataBatcher(object):    
@@ -46,7 +57,7 @@ class DataBatcher(object):
         """
         """
         if isinstance(example_gen_or_list, list):
-            self.example_gen = get_generator_for_list(example_gen_or_list)
+            self.example_gen = lambda single_pass: run_through_list_data(example_gen_or_list, single_pass)
         else:
             self.example_gen = example_gen_or_list
         #

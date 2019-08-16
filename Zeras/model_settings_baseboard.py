@@ -86,9 +86,9 @@ class ModelSettingsBaseboard(object):
         #
         # save and log, if not set, default values will be used.
         self.base_dir = './task_results'
-        self.model_dir = None
-        self.model_name = None
+        self.model_dir = None        
         self.model_dir_best = None
+        self.model_name = None
         self.pb_file = None
         self.log_dir = None
         self.log_path = None
