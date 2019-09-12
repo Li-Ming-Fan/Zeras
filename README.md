@@ -10,12 +10,12 @@ from Zeras.data_batcher import DataBatcher
 from Zeras.data_parallelism import DataParallelism
 
 from Zeras.model_settings_baseboard import ModelSettingsBaseboard
-from Zeras.model_wrapper import ModelWrapper
-
-from Zeras.vocab import Vocab
+from Zeras.model_baseboard import ModelBaseboard
 
 import Zeras.zoo_nn as zrs_nn
 import Zeras.zoo_layers as zrs_layers
+
+from Zeras.vocab import Vocab
 
 ```
 
@@ -49,6 +49,8 @@ For usage of this package, please refer to the repositories:
 https://github.com/Li-Ming-Fan/text_classification
 
 https://github.com/Li-Ming-Fan/transformer-tensorflow
+
+https://github.com/Li-Ming-Fan/pointer-generator-refactored
 
 
 </br>
