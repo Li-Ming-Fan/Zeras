@@ -21,7 +21,10 @@ This class is meant to be task-agnostic.
 
 #
 def get_warmup_and_exp_decayed_lr(settings, global_step):
-    """ lr_base, warmup_steps, decay_steps, decay_rate, staircase
+    """ settings.warmup_steps
+        settings.decay_steps
+        settings.decay_rate
+        settings.staircase
         
         learning_rate_schedule = get_warmup_and_exp_decayed_lr
         self.learning_rate_tensor = self.learning_rate_schedule(self.settings, self.global_step)
@@ -80,6 +83,18 @@ class ModelBaseboard(metaclass=ABCMeta):
     def __init__(self, settings):
         """
         """
+        # session info
+        self.log_device = False
+        self.soft_placement = False
+        self.gpu_mem_growth = True
+        #
+        # params
+        self.reg_lambda = 0.0
+        self.reg_exclusions = ["embedding", "bias", "layer_norm", "LayerNorm"]
+        #
+        self.grad_clip = 0.0
+        #
+        # settings
         self.set_model_settings(settings)
         #
         self.learning_rate_schedule = get_warmup_and_exp_decayed_lr
@@ -89,14 +104,30 @@ class ModelBaseboard(metaclass=ABCMeta):
     #
     def set_model_settings(self, settings):
         #
+        # settings
         self.settings = settings
         self.num_gpu = len(settings.gpu.split(","))
         #
         # session info
-        self.sess_config = tf.ConfigProto(log_device_placement = settings.log_device,
-                                          allow_soft_placement = settings.soft_placement)
-        self.sess_config.gpu_options.allow_growth = settings.gpu_mem_growth
+        if "log_device" in settings.__dict__.keys():
+            self.log_device = settings.log_device
         #
+        if "soft_placement" in settings.__dict__.keys():
+            self.soft_placement = settings.soft_placement
+        #
+        if "gpu_mem_growth" in settings.__dict__.keys():
+            self.gpu_mem_growth = settings.gpu_mem_growth
+        #
+        # params
+        if "reg_lambda" in settings.__dict__.keys():
+            self.reg_lambda = settings.reg_lambda
+        #
+        if "reg_exclusions" in settings.__dict__.keys():
+            self.reg_exclusions = settings.reg_exclusions
+        #
+        if "grad_clip" in settings.__dict__.keys():
+            self.grad_clip = settings.grad_clip
+        #        
         """
         for key in settings.__dict__.keys():                 
             self.__dict__[key] = settings.__dict__[key]
@@ -177,6 +208,11 @@ class ModelBaseboard(metaclass=ABCMeta):
     def prepare_for_train(self, dir_ckpt = None):
         """
         """
+        # session info
+        self.sess_config = tf.ConfigProto(log_device_placement = self.log_device,
+                                          allow_soft_placement = self.soft_placement)
+        self.sess_config.gpu_options.allow_growth = self.gpu_mem_growth
+        #
         # graph
         self._graph = tf.Graph()
         with self._graph.as_default():
@@ -322,23 +358,23 @@ class ModelBaseboard(metaclass=ABCMeta):
             #
             # regularization
             def is_excluded(v):
-                for item in self.settings.reg_exclusions:
+                for item in self.reg_exclusions:
                     if item in v.name: return True
                 return False
             #
-            if self.settings.reg_lambda > 0.0:
+            if self.reg_lambda > 0.0:
                 loss_reg = tf.add_n( [tf.nn.l2_loss(v) for v in self.trainable_vars
                                      if not is_excluded(v)] )
-                loss_reg = tf.multiply(loss_reg, self.settings.reg_lambda)
+                loss_reg = tf.multiply(loss_reg, self.reg_lambda)
                 self.loss_train_tensor = tf.add(self.loss_train_tensor, loss_reg)
             #
             # gradient
             grad_and_vars = self._opt.compute_gradients(self.loss_train_tensor)
             #
             # grad_clip           
-            if self.settings.grad_clip > 0.0:
+            if self.grad_clip > 0.0:
                 gradients, variables = zip(*grad_and_vars)
-                grads, global_norm = tf.clip_by_global_norm(gradients, self.settings.grad_clip)
+                grads, global_norm = tf.clip_by_global_norm(gradients, self.grad_clip)
                 grad_and_vars = zip(grads, variables)
                 self.global_norm = global_norm
             #
@@ -476,6 +512,11 @@ class ModelBaseboard(metaclass=ABCMeta):
         if pb_file_path is None: pb_file_path = self.settings.pb_file 
         if not os.path.exists(pb_file_path):
             assert False, 'ERROR: %s NOT exists, when prepare_for_prediction()' % pb_file_path
+        #
+        # session info
+        self.sess_config = tf.ConfigProto(log_device_placement = self.log_device,
+                                          allow_soft_placement = self.soft_placement)
+        self.sess_config.gpu_options.allow_growth = self.gpu_mem_growth
         #
         self._graph = tf.Graph()
         with self._graph.as_default():
