@@ -6,10 +6,9 @@ A simple tensorflow wrapper
 ## Description
 
 ```
-from Zeras.data_batcher import DataBatcher
 from Zeras.data_parallelism import DataParallelism
+from Zeras.data_batcher import DataBatcher
 
-from Zeras.model_settings_baseboard import ModelSettingsBaseboard
 from Zeras.model_baseboard import ModelBaseboard
 
 import Zeras.zoo_nn as zrs_nn
