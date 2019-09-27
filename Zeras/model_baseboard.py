@@ -9,6 +9,10 @@ Created on Sat Sep  7 23:19:42 2019
 import os
 import numpy as np
 
+import time
+import logging
+import json
+
 import tensorflow as tf
 from tensorflow.python.framework import graph_util
 
@@ -83,57 +87,98 @@ class ModelBaseboard(metaclass=ABCMeta):
     def __init__(self, settings):
         """
         """
-        # session info
-        self.log_device = False
-        self.soft_placement = False
-        self.gpu_mem_growth = True
-        #
-        # params
-        self.reg_lambda = 0.0
-        self.reg_exclusions = ["embedding", "bias", "layer_norm", "LayerNorm"]
-        #
-        self.grad_clip = 0.0
-        #
         # settings
         self.set_model_settings(settings)
         #
         self.learning_rate_schedule = get_warmup_and_exp_decayed_lr
         self.customized_optimizer = get_adam_optimizer
-        #
+        #        
         
     #
     def set_model_settings(self, settings):
         #
-        # settings
-        self.settings = settings
-        self.num_gpu = len(settings.gpu.split(","))
-        #
         # session info
-        if "log_device" in settings.__dict__.keys():
-            self.log_device = settings.log_device
+        if "log_device" not in settings.__dict__.keys():
+            settings.__dict__["log_device"] = False 
         #
-        if "soft_placement" in settings.__dict__.keys():
-            self.soft_placement = settings.soft_placement
+        if "soft_placement" not in settings.__dict__.keys():
+            settings.__dict__["soft_placement"] = True 
         #
-        if "gpu_mem_growth" in settings.__dict__.keys():
-            self.gpu_mem_growth = settings.gpu_mem_growth
+        if "gpu_mem_growth" not in settings.__dict__.keys():
+            settings.__dict__["gpu_mem_growth"] = True 
         #
         # params
-        if "reg_lambda" in settings.__dict__.keys():
-            self.reg_lambda = settings.reg_lambda
+        if "reg_lambda" not in settings.__dict__.keys():
+            settings.__dict__["reg_lambda"] = 0.0
         #
-        if "reg_exclusions" in settings.__dict__.keys():
-            self.reg_exclusions = settings.reg_exclusions
+        if "reg_exclusions" not in settings.__dict__.keys():
+            settings.__dict__["reg_exclusions"] = ["embedding", "bias", "layer_norm", "LayerNorm"]
         #
-        if "grad_clip" in settings.__dict__.keys():
-            self.grad_clip = settings.grad_clip
+        if "grad_clip" not in settings.__dict__.keys():
+            settings.__dict__["grad_clip"] = 0.0
         #        
         """
         for key in settings.__dict__.keys():                 
             self.__dict__[key] = settings.__dict__[key]
         """
-        #        
+        #
+        # settings
+        self.settings = settings
+        self.num_gpu = len(settings.gpu.split(","))
+        #
+        # logger
+        self.create_logger()
+        #
+        # dict
+        info_dict = {}
+        for name,value in vars(settings).items():
+            if not isinstance(value, (int, float, str, bool, list, dict, tuple)):
+                continue
+            info_dict[str(name)] = value        
+        #
+        info_str = json.dumps(info_dict, ensure_ascii=False)
+        self.logger.info(info_str)
+        #
         
+    #
+    def create_logger(self, log_path=None):
+        """
+        """
+        #
+        try:
+            self.close_logger()
+        except Exception:
+            pass
+        #
+        # logger
+        str_datetime = time.strftime("%Y-%m-%d-%H-%M")       
+        if log_path is None:
+            self.log_path = os.path.join(self.settings.log_dir, "log_" + str_datetime +".txt")
+        else:
+            self.log_path = log_path
+        #
+        with open(self.log_path, 'w', encoding='utf-8'):
+            pass
+        #
+        self.logger = logging.getLogger(self.log_path)  # use log_path as log_name
+        self.logger.setLevel(logging.INFO)
+        #
+        handler = logging.FileHandler(self.log_path)
+        handler.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
+        # self.logger.info('test')
+        #
+        
+    def close_logger(self):
+        """
+        """
+        for item in self.logger.handlers:
+            item.close()
+        #
+
     #
     @abstractmethod
     def build_placeholder(self):
@@ -209,9 +254,9 @@ class ModelBaseboard(metaclass=ABCMeta):
         """
         """
         # session info
-        self.sess_config = tf.ConfigProto(log_device_placement = self.log_device,
-                                          allow_soft_placement = self.soft_placement)
-        self.sess_config.gpu_options.allow_growth = self.gpu_mem_growth
+        self.sess_config = tf.ConfigProto(log_device_placement = self.settings.log_device,
+                                          allow_soft_placement = self.settings.soft_placement)
+        self.sess_config.gpu_options.allow_growth = self.settings.gpu_mem_growth
         #
         # graph
         self._graph = tf.Graph()
@@ -358,23 +403,23 @@ class ModelBaseboard(metaclass=ABCMeta):
             #
             # regularization
             def is_excluded(v):
-                for item in self.reg_exclusions:
+                for item in self.settings.reg_exclusions:
                     if item in v.name: return True
                 return False
             #
-            if self.reg_lambda > 0.0:
+            if self.settings.reg_lambda > 0.0:
                 loss_reg = tf.add_n( [tf.nn.l2_loss(v) for v in self.trainable_vars
                                      if not is_excluded(v)] )
-                loss_reg = tf.multiply(loss_reg, self.reg_lambda)
+                loss_reg = tf.multiply(loss_reg, self.settings.reg_lambda)
                 self.loss_train_tensor = tf.add(self.loss_train_tensor, loss_reg)
             #
             # gradient
             grad_and_vars = self._opt.compute_gradients(self.loss_train_tensor)
             #
             # grad_clip           
-            if self.grad_clip > 0.0:
+            if self.settings.grad_clip > 0.0:
                 gradients, variables = zip(*grad_and_vars)
-                grads, global_norm = tf.clip_by_global_norm(gradients, self.grad_clip)
+                grads, global_norm = tf.clip_by_global_norm(gradients, self.settings.grad_clip)
                 grad_and_vars = zip(grads, variables)
                 self.global_norm = global_norm
             #
@@ -408,7 +453,7 @@ class ModelBaseboard(metaclass=ABCMeta):
             # params count
             self.num_vars = len(self.trainable_vars)
             str_info = 'graph built, there are %d variables in the model' % self.num_vars
-            self.settings.logger.info(str_info)
+            self.logger.info(str_info)
             print(str_info)
             #
             tf_shapes = [tf.shape(v) for v in self.trainable_vars]
@@ -417,7 +462,7 @@ class ModelBaseboard(metaclass=ABCMeta):
             self.param_num = sum(params_v)
             #
             str_info = 'there are %d parameters in the model' % self.param_num
-            self.settings.logger.info(str_info)
+            self.logger.info(str_info)
             print(str_info)
             #
             print()
@@ -430,10 +475,10 @@ class ModelBaseboard(metaclass=ABCMeta):
         # load
         # if dir_ckpt is None: dir_ckpt = self.model_dir + '_best'
         if dir_ckpt is not None:
-            self.settings.logger.info("ckpt loading when prepare for train")
+            self.logger.info("ckpt loading when prepare for train")
             self.load_ckpt(dir_ckpt)
         else:
-            self.settings.logger.info("ckpt not loading when prepare for train")
+            self.logger.info("ckpt not loading when prepare for train")
         #
         
     #
@@ -468,11 +513,11 @@ class ModelBaseboard(metaclass=ABCMeta):
             self._saver.restore(self._sess, ckpt.model_checkpoint_path)
             #
             str_info = 'ckpt loaded from %s' % dir_ckpt
-            self.settings.logger.info(str_info)
+            self.logger.info(str_info)
             print(str_info)
         else:
-            str_info = 'Failed: ckpt loading from %s' % dir_ckpt
-            self.settings.logger.info(str_info)
+            str_info = 'loading ckpt failed: ckpt loading from %s' % dir_ckpt
+            self.logger.info(str_info)
             print(str_info)
             
     #
@@ -498,7 +543,7 @@ class ModelBaseboard(metaclass=ABCMeta):
             f.write(constant_graph.SerializeToString())
         #
         str_info = 'pb_file saved: %s' % pb_file
-        model.settings.logger.info(str_info)
+        model.logger.info(str_info)
         #
         model.settings.is_train = is_train
         model.num_gpu = num_gpu
@@ -514,9 +559,9 @@ class ModelBaseboard(metaclass=ABCMeta):
             assert False, 'ERROR: %s NOT exists, when prepare_for_prediction()' % pb_file_path
         #
         # session info
-        self.sess_config = tf.ConfigProto(log_device_placement = self.log_device,
-                                          allow_soft_placement = self.soft_placement)
-        self.sess_config.gpu_options.allow_growth = self.gpu_mem_growth
+        self.sess_config = tf.ConfigProto(log_device_placement = self.settings.log_device,
+                                          allow_soft_placement = self.settings.soft_placement)
+        self.sess_config.gpu_options.allow_growth = self.settings.gpu_mem_growth
         #
         self._graph = tf.Graph()
         with self._graph.as_default():
