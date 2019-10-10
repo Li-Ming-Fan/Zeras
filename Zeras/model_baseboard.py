@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sat Sep  7 23:19:42 2019
-
 @author: li-ming-fan
 """
 
@@ -90,9 +89,9 @@ class ModelBaseboard(metaclass=ABCMeta):
         # settings
         self.set_model_settings(settings)
         #
-        self.learning_rate_schedule = get_warmup_and_exp_decayed_lr
+        self.learning_rate_schedule = get_warmup_and_exp_decayed_lr  # None
         self.customized_optimizer = get_adam_optimizer
-        #        
+        #
         
     #
     def set_model_settings(self, settings):
@@ -116,7 +115,10 @@ class ModelBaseboard(metaclass=ABCMeta):
         #
         if "grad_clip" not in settings.__dict__.keys():
             settings.__dict__["grad_clip"] = 0.0
-        #        
+        #
+        if "saver_num_keep" not in settings.__dict__.keys():
+            settings.__dict__["saver_num_keep"] = 5
+        #
         """
         for key in settings.__dict__.keys():                 
             self.__dict__[key] = settings.__dict__[key]
@@ -374,7 +376,13 @@ class ModelBaseboard(metaclass=ABCMeta):
                                                initializer = tf.constant_initializer(0),
                                                trainable = False)
             #
-            self.learning_rate_tensor = self.learning_rate_schedule(self.settings, self.global_step)
+            if self.learning_rate_schedule is not None:
+                self.learning_rate_tensor = self.learning_rate_schedule(self.settings, self.global_step)
+            else:
+                lr = self.settings.learning_rate_base
+                self.learning_rate_tensor = tf.get_variable("learning_rate", shape=[], dtype=tf.float32,
+                                                            initializer = tf.constant_initializer(lr),
+                                                            trainable = False)
             #
             # optimizer
             # optimizer = tf.train.MomentumOptimizer(learning_rate, MOMENTUM, use_nesterov=True)
@@ -434,8 +442,8 @@ class ModelBaseboard(metaclass=ABCMeta):
             
             #                
             # save info
-            self._saver = tf.train.Saver()
-            self._saver_best = tf.train.Saver()
+            self._saver = tf.train.Saver(max_to_keep = self.settings.saver_num_keep)
+            self._saver_best = tf.train.Saver(max_to_keep = self.settings.saver_num_keep)
             
             # sess
             self._sess = tf.Session(graph=self._graph, config = self.sess_config)
@@ -482,6 +490,7 @@ class ModelBaseboard(metaclass=ABCMeta):
         #
         
     #
+    # assign
     def assign_dropout_keep_prob(self, keep_prob):
         #
         with self._graph.as_default():
@@ -494,8 +503,16 @@ class ModelBaseboard(metaclass=ABCMeta):
         with self._graph.as_default():
             self._sess.run(tf.assign(self.global_step, tf.constant(step, dtype=tf.int32)))
         #
+        
+    def assign_learning_rate(self, lr_value):
+        #
+        with self._graph.as_default():
+            self._sess.run(tf.assign(self.learning_rate_tensor,
+                                     tf.constant(lr_value, dtype=tf.float32)))
+        #
     
-    #    
+    #
+    # save and load
     def save_ckpt_best(self, model_dir, model_name, step):
         #
         self._saver_best.save(self._sess, os.path.join(model_dir, model_name),
@@ -521,6 +538,7 @@ class ModelBaseboard(metaclass=ABCMeta):
             print(str_info)
             
     #
+    # predict, pb
     @staticmethod
     def load_ckpt_and_save_pb_file(model, dir_ckpt):
         """
@@ -528,13 +546,15 @@ class ModelBaseboard(metaclass=ABCMeta):
         is_train = model.settings.is_train
         num_gpu = model.num_gpu
         #
-        model.settings.is_train = False                      #
-        model.num_gpu = 1                                    #
+        model.settings.is_train = False                #
+        model.num_gpu = 1                              #
         #
-        model.prepare_for_train_and_valid(dir_ckpt)          # loaded here 
+        model.prepare_for_train(dir_ckpt)              # loaded here 
         model.assign_dropout_keep_prob(1.0)
         #
-        pb_file = os.path.join(dir_ckpt, "model_saved.pb")
+        model.set_port_tensors_for_predict()
+        #
+        pb_file = os.path.join(dir_ckpt, "model_frozen.pb")
         #
         constant_graph = graph_util.convert_variables_to_constants(
                 model._sess, model._sess.graph_def,
@@ -549,8 +569,6 @@ class ModelBaseboard(metaclass=ABCMeta):
         model.num_gpu = num_gpu
         #
         
-    #
-    # predict
     def prepare_for_prediction_with_pb(self, pb_file_path = None):
         """ load pb for prediction
         """
@@ -574,6 +592,7 @@ class ModelBaseboard(metaclass=ABCMeta):
                 #
         #
         self._sess = tf.Session(graph = self._graph, config = self.sess_config)
+        self.set_port_tensors_for_predict()
         #
     
     def predict_one_batch_with_pb(self, x_batch):
@@ -583,7 +602,8 @@ class ModelBaseboard(metaclass=ABCMeta):
         feed_dict = self.make_feed_dict_for_predict(x_batch)
         outputs = self._sess.run(self.outputs_predict, feed_dict = feed_dict)        
         return outputs
-
+    
+    #
     # graph and sess
     def get_model_graph_and_sess(self):
         #
@@ -594,6 +614,3 @@ class ModelBaseboard(metaclass=ABCMeta):
 if __name__ == '__main__':
     
     pass
-
-        
-    

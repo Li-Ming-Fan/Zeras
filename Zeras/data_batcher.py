@@ -190,13 +190,17 @@ class DataBatcher(object):
                         flag_succeed = 0
                         break
                 #
-                if flag_succeed == 0:
-                    for example in b:
-                        self._example_queue.put(example)
-                    print("fill_batch_queue(), examples reput, num_examples: %d." % len(b))
-                    break
+                if flag_succeed == 1:
+                    self._batch_queue.put(self.batch_standardizer(b))
+                else:
+                    if self._finished_reading:  # single_pass and finished
+                        self._batch_queue.put(self.batch_standardizer(b)) 
+                    else:  # not single_pass, single_pass but not finished                      
+                        for example in b:
+                            self._example_queue.put(example)
+                        print("fill_batch_queue(), examples reput, num_examples: %d." % len(b))
+                        break
                 #
-                self._batch_queue.put(self.batch_standardizer(b)) 
                 # print(b)
                 #
     
