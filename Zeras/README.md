@@ -12,6 +12,12 @@ from Zeras.data_batcher import DataBatcher
 from Zeras.model_settings_baseboard import ModelSettingsBaseboard
 from Zeras.model_baseboard import ModelBaseboard
 
+from Zeras.optim import linear_warmup_and_exp_decayed_lr
+from Zeras.optim import linear_warmup_and_polynomial_decayed_lr
+from Zeras.optim import adam_optimizer
+from Zeras.optim import adam_wd_optimizer
+from Zeras.optim import AdamWeightDecayOptimizer
+
 import Zeras.zoo_nn as zrs_nn
 import Zeras.zoo_layers as zrs_layers
 
