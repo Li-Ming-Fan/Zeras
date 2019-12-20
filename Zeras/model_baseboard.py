@@ -17,77 +17,23 @@ from tensorflow.python.framework import graph_util
 
 from abc import ABCMeta, abstractmethod
 
+from .optim import linear_warmup_and_polynomial_decayed_lr
+from .optim import adam_wd_optimizer, adam_optimizer
+
 
 """
 This class is meant to be task-agnostic.
-"""
-
-#
-def get_warmup_and_exp_decayed_lr(settings, global_step):
-    """ settings.warmup_steps
-        settings.decay_steps
-        settings.decay_rate
-        settings.staircase
-        
-        learning_rate_schedule = get_warmup_and_exp_decayed_lr
-        self.learning_rate_tensor = self.learning_rate_schedule(self.settings, self.global_step)
-    """
-    learning_rate = tf.constant(value = settings.learning_rate_base,
-                                shape = [], dtype = tf.float32)
-        
-    if settings.warmup_steps:
-        global_steps_int = tf.cast(global_step, tf.int32)
-        warmup_steps_int = tf.constant(settings.warmup_steps, dtype=tf.int32)
-        
-        global_steps_float = tf.cast(global_steps_int, tf.float32)
-        warmup_steps_float = tf.cast(warmup_steps_int, tf.float32)
-        
-        step_surplus = global_steps_int - warmup_steps_int
-        learning_rate = tf.train.exponential_decay(learning_rate,
-                                                   step_surplus,
-                                                   settings.decay_steps,
-                                                   settings.decay_rate,
-                                                   settings.staircase)
-        
-        warmup_percent_done = global_steps_float / warmup_steps_float
-        warmup_learning_rate = settings.learning_rate_base * warmup_percent_done
-        
-        learning_rate = tf.cond(global_steps_int < warmup_steps_int,
-                                lambda: warmup_learning_rate,
-                                lambda: learning_rate)
-    #
-    else:
-        learning_rate = tf.train.exponential_decay(learning_rate,
-                                                   global_step,
-                                                   settings.decay_steps,
-                                                   settings.decay_rate,
-                                                   settings.staircase)
-    #
-    return learning_rate
-    #
-    
-def get_adam_optimizer(settings, learning_rate_tensor_or_value):
-    """ 
-        customized_optimizer = get_adam_optimizer
-        self._opt = self.customized_optimizer(self.settings, self.learning_rate_tensor)
-        
-        grad_and_vars = self._opt.compute_gradients(self.loss_train_tensor)
-        self.train_op = self._opt.apply_gradients(grad_and_vars, global_step = self.global_step)
-    """
-    opt = tf.train.AdamOptimizer(learning_rate_tensor_or_value, beta1 = settings.momentum)
-    return opt
-    #
-    
+""" 
     
 #
 class ModelBaseboard(metaclass=ABCMeta):
     """
     """    
     def __init__(self, settings,
-                 learning_rate_schedule = get_warmup_and_exp_decayed_lr,
-                 customized_optimizer = get_adam_optimizer):
+                 learning_rate_schedule = linear_warmup_and_polynomial_decayed_lr,
+                 customized_optimizer = adam_optimizer):
         #
-        self.learning_rate_schedule = get_warmup_and_exp_decayed_lr
+        self.learning_rate_schedule = learning_rate_schedule
         self.customized_optimizer = customized_optimizer
         #
         self.set_model_settings(settings)
@@ -268,9 +214,11 @@ class ModelBaseboard(metaclass=ABCMeta):
             if self.settings.optimizer_type == 'sgd':
                 self._opt = tf.train.GradientDescentOptimizer(self.learning_rate_tensor)
             elif self.settings.optimizer_type == 'momentum':
-                self._opt = tf.train.MomentumOptimizer(self.learning_rate_tensor, self.settings.momentum, use_nesterov=True)
+                self._opt = tf.train.MomentumOptimizer(self.learning_rate_tensor, self.settings.beta_1, use_nesterov=True)
             elif self.settings.optimizer_type == 'adam':
-                self._opt = tf.train.AdamOptimizer(learning_rate = self.learning_rate_tensor, beta1 = self.settings.momentum)
+                self._opt = tf.train.AdamOptimizer(self.learning_rate_tensor, self.settings.beta_1, self.settings.beta_2)
+            elif self.settings.optimizer_type == 'adam_wd':
+                self._opt = adam_wd_optimizer(self.settings, self.learning_rate_tensor)
             elif self.settings.optimizer_type == 'customized':
                 self._opt = self.customized_optimizer(self.settings, self.learning_rate_tensor)
             else:
@@ -303,7 +251,7 @@ class ModelBaseboard(metaclass=ABCMeta):
                     if item in v.name: return True
                 return False
             #
-            if self.settings.reg_lambda > 0.0:
+            if self.settings.reg_lambda > 0.0 and self.settings.optimizer_type != 'adam_wd':
                 loss_reg = tf.add_n( [tf.nn.l2_loss(v) for v in self.trainable_vars
                                      if not is_excluded(v)] )
                 loss_reg = tf.multiply(loss_reg, self.settings.reg_lambda)
@@ -434,9 +382,11 @@ class ModelBaseboard(metaclass=ABCMeta):
             if self.settings.optimizer_type == 'sgd':
                 self._opt = tf.train.GradientDescentOptimizer(self.learning_rate_tensor)
             elif self.settings.optimizer_type == 'momentum':
-                self._opt = tf.train.MomentumOptimizer(self.learning_rate_tensor, self.settings.momentum, use_nesterov=True)
+                self._opt = tf.train.MomentumOptimizer(self.learning_rate_tensor, self.settings.beta_1, use_nesterov=True)
             elif self.settings.optimizer_type == 'adam':
-                self._opt = tf.train.AdamOptimizer(learning_rate = self.learning_rate_tensor, beta1 = self.settings.momentum)
+                self._opt = tf.train.AdamOptimizer(self.learning_rate_tensor, self.settings.beta_1, self.settings.beta_2)
+            elif self.settings.optimizer_type == 'adam_wd':
+                self._opt = adam_wd_optimizer(self.settings, self.learning_rate_tensor)
             elif self.settings.optimizer_type == 'customized':
                 self._opt = self.customized_optimizer(self.settings, self.learning_rate_tensor)
             else:
@@ -506,7 +456,7 @@ class ModelBaseboard(metaclass=ABCMeta):
                     if item in v.name: return True
                 return False
             #
-            if self.settings.reg_lambda > 0.0:
+            if self.settings.reg_lambda > 0.0 and self.settings.optimizer_type != 'adam_wd':
                 loss_reg = tf.add_n( [tf.nn.l2_loss(v) for v in self.trainable_vars
                                      if not is_excluded(v)] )
                 loss_reg = tf.multiply(loss_reg, self.settings.reg_lambda)
