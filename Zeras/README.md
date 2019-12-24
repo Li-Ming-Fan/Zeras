@@ -6,11 +6,11 @@ A simple tensorflow wrapper
 ## Description
 
 ```
-from Zeras.data_parallelism import DataParallelism
+from Zeras.data_parallelism import DataParallelism, get_files_with_ext
 from Zeras.data_batcher import DataBatcher
 
 from Zeras.model_settings_baseboard import ModelSettingsBaseboard
-from Zeras.model_baseboard import ModelBaseboard
+from Zeras.model_baseboard import ModelBaseboard, initialize_with_pretrained_ckpt
 
 from Zeras.optim import linear_warmup_and_exp_decayed_lr
 from Zeras.optim import linear_warmup_and_polynomial_decayed_lr
