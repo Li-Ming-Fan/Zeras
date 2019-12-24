@@ -782,7 +782,7 @@ def initialize_with_pretrained_ckpt(init_ckpt,
                                     trainable_vars=None,
                                     graph=None):
     """ name_replace_dict = { old_name_str_chunk: new_name_str_chunk }
-        non_trainable_names = ["bert", "word_embeddings"]  # for examples 
+        non_trainable_names = ["bert", "word_embeddings"]  # for example
     """
     if assignment_map is None:
         assignment_map = get_assignment_map_from_ckpt(init_ckpt,
