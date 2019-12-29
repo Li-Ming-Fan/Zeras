@@ -22,7 +22,6 @@ import Zeras.zoo_nn as zrs_nn
 import Zeras.zoo_layers as zrs_layers
 
 from Zeras.vocab import Vocab
-
 ```
 
 
@@ -61,7 +60,7 @@ https://github.com/Li-Ming-Fan/pointer-generator-refactored
 
 </br>
 
-## Acknowledgment
+## Acknowledgement
 
 The name "Zeras" is a variant from Keras. We use "Z" because it makes the direcory Zeras/ always display in the last (or first) and do not intersect other directories.
 
