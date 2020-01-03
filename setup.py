@@ -22,7 +22,7 @@ with open('LICENSE') as fp:
 
 setup(name = 'Zeras',
       version = Zeras.__version__,
-      description = 'A simple tensorflow wrapper.',
+      description = 'A package of deep-learning utilities.',
       long_description = readme,
       long_description_content_type="text/markdown",
       author = 'Ming-Fan Li',
