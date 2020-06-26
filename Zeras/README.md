@@ -8,8 +8,9 @@ A package of deep-learning utilities.
 Common to tf and torch:
 
 ```
-from Zeras.data_parallelism import DataParallelism, get_files_with_ext
-from Zeras.data_batcher import DataBatcher
+from Zeras.data_tools import DataBatcher, DataParallelism
+from Zeras.data_tools import get_files_with_ext
+from Zeras.data_tools import save_data_to_pkl, load_data_from_pkl
 from Zeras.data_paral_batcher import DataParalBatcher
 
 from Zeras.vocab import Vocab
@@ -18,13 +19,15 @@ from Zeras.settings_baseboard import SettingsBaseboard
 ```
 
 
-Specific to tf:
+Specific to tfv1:
 
 ```
 from Zeras.model_baseboard import ModelBaseboard
 from Zeras.model_baseboard import initialize_from_ckpt
+from Zeras.model_baseboard import get_all_variables
 from Zeras.model_baseboard import remove_from_trainable_variables
 
+from Zeras.optim import constant_lr
 from Zeras.optim import linear_warmup_and_exp_decayed_lr
 from Zeras.optim import linear_warmup_and_polynomial_decayed_lr
 from Zeras.optim import adam_optimizer
