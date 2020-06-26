@@ -290,7 +290,7 @@ class ModelBaseboard(metaclass=ABCMeta):
             self.logger = settings.logger
         else:
             #
-            str_datetime = time.strftime("%Y-%m-%d-%H-%M-%S")
+            str_datetime = time.strftime("%Y_%m_%d_%H_%M_%S")
             log_path = os.path.join(settings.log_dir, settings.model_name + "_" + str_datetime +".txt")
             self.log_path = log_path
             self.logger = self.create_logger(log_path)
@@ -423,24 +423,28 @@ class ModelBaseboard(metaclass=ABCMeta):
             # optimizer = tf.train.AdadeltaOptimizer(learning_rate=self.lr, epsilon=1e-6)              
             # optimizer = tf.train.AdamOptimizer(learning_rate = self.learning_rate, beta1 = MOMENTUM)
             #
-            if self.settings.optimizer_type == 'sgd':
-                self._opt = tf.train.GradientDescentOptimizer(self.learning_rate_tensor)
-            elif self.settings.optimizer_type == 'momentum':
-                self._opt = tf.train.MomentumOptimizer(self.learning_rate_tensor, self.settings.beta_1, use_nesterov=True)
-            elif self.settings.optimizer_type == 'adam':
-                self._opt = tf.train.AdamOptimizer(self.learning_rate_tensor, self.settings.beta_1, self.settings.beta_2)
-            elif self.settings.optimizer_type == 'adam_wd':
-                self._opt = adam_wd_optimizer(self.settings, self.learning_rate_tensor)
-            elif self.settings.optimizer_type == 'customized':
-                self._opt = self.customized_optimizer(self.settings, self.learning_rate_tensor)
-            else:
-                assert False, "NOT supported optimizer_type"
-            #
             with tf.variable_scope(vscope, reuse=tf.AUTO_REUSE):
+                if self.settings.optimizer_type == 'sgd':
+                    self._opt = tf.train.GradientDescentOptimizer(self.learning_rate_tensor)
+                elif self.settings.optimizer_type == 'momentum':
+                    self._opt = tf.train.MomentumOptimizer(self.learning_rate_tensor, self.settings.beta_1, use_nesterov=True)
+                elif self.settings.optimizer_type == 'adam':
+                    self._opt = tf.train.AdamOptimizer(self.learning_rate_tensor, self.settings.beta_1, self.settings.beta_2)
+                elif self.settings.optimizer_type == 'adam_wd':
+                    self._opt = adam_wd_optimizer(self.settings, self.learning_rate_tensor)
+                elif self.settings.optimizer_type == 'customized':
+                    self._opt = self.customized_optimizer(self.settings, self.learning_rate_tensor)
+                else:
+                    assert False, "NOT supported optimizer_type"
+                #
                 if self.num_gpu == 1:
                     self.build_optimizer_single_gpu()
                 else:
                     self.build_optimizer_multi_gpu()
+                #
+                var_list = [item for item in tf.global_variables() if vscope in item.name]
+                self._sess.run(tf.variables_initializer(var_list))
+                #
             #
             # params count
             self.num_vars = len(self.trainable_vars)
@@ -463,11 +467,6 @@ class ModelBaseboard(metaclass=ABCMeta):
                 print(params_v[idx])
             print()
             #
-        #
-        with self._graph.as_default():
-            pass
-            # self._sess.run(tf.global_variables_initializer())
-        #
     #
     
     #
