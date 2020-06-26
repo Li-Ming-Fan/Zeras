@@ -7,38 +7,34 @@ import re
 class Vocab(object):
     """
     """
-    pad_lower = "[pad]"
-    unk_lower = "[unk]"
-    pad_upper = "[PAD]"
-    unk_upper = "[UNK]"
-    num_predefined_tokens = 2
+    pad_token = "[pad]"
+    unk_token = "[unk]"
     
-    delimiter_str = '[STRSEP]'
-    
-    def __init__(self, initial_tokens = [], lower = False):
+    def __init__(self, initial_tokens = [], use_pad=True, use_unk=True):
         """
         """
         self.dict_id2token = {}
         self.dict_token2id = {}
         self.dict_token_cnt = {}
-        self.lower = lower
 
-        self.emb_dim = 64
+        self.emb_dim = None
         self.embeddings = None
         
+        #
         self.initial_tokens = initial_tokens
-
+        self.use_pad = use_pad
+        self.use_unk = use_unk
+        #
         self._add_predefined_and_initial_tokens()
         #
 
     def _add_predefined_and_initial_tokens(self):
         """
         """
-        self.pad_token = self.pad_lower if self.lower else self.pad_upper
-        self.unk_token = self.unk_lower if self.lower else self.unk_upper
-        #
-        self.add(self.pad_token, 10000)  # make pad_token id: 0
-        self.add(self.unk_token, 10000)
+        if self.use_pad:
+            self.add(pad_token, 10000)  # make pad_token id: 0
+        if self.use_unk:
+            self.add(unk_token, 10000)
         #
         for token in self.initial_tokens:
             self.add(token, cnt = 10000)
@@ -48,7 +44,6 @@ class Vocab(object):
         return len(self.dict_id2token)
 
     def get_id(self, token):
-        token = token.lower() if self.lower else token
         try:
             return self.dict_token2id[token]
         except KeyError:
@@ -61,8 +56,6 @@ class Vocab(object):
             return self.unk_token
 
     def add(self, token, cnt=1):
-        #
-        token = token.lower() if self.lower else token
         if token in self.dict_token2id:
             idx = self.dict_token2id[token]
             # print('same token: %s' % token)
@@ -80,14 +73,13 @@ class Vocab(object):
     def add_tokens_from_vocab(self, vocab):
         """ add tokens from another vocab instance
         """
-        for token in vocab.dict_token_cnt:
+        for token in vocab.dict_token_cnt.keys():
             self.add(token, vocab.dict_token_cnt[token])
         
-    def add_tokens_from_corpus(self, corp):
-        """ add tokens from corpus (list)
-            with each item in the list as a list of tokens 
+    def add_tokens_from_nested_tokens(self, nested_tokens):
+        """ add tokens from nested_tokens (list of list of tokens) 
         """
-        for item in corp:
+        for item in nested_tokens:
             for word in item:
                 self.add(word)
                 
@@ -156,14 +148,17 @@ class Vocab(object):
     def filter_tokens_by_cnt(self, min_cnt):
         #
         #filtered_tokens = [token for token in self.token2id if self.token_cnt[token] >= min_cnt]
-        filtered_tokens = [self.dict_id2token[idd] for idd in range(self.size())
-                                   if self.dict_token_cnt[self.dict_id2token[idd]] >= min_cnt]
+        filtered_tokens = [self.dict_id2token[idx] for idx in range(self.size())
+                                   if self.dict_token_cnt[self.dict_id2token[idx]] >= min_cnt]
         # rebuild the token ~ id map
         self.dict_token2id = {}
         self.dict_id2token = {}
+        dict_token_cnt_bak = self.dict_token_cnt
+        self.dict_token_cnt = {}
+        #
         self._add_predefined_and_initial_tokens()
         for token in filtered_tokens:
-            self.add(token, cnt=0)
+            self.add(token, cnt=dict_token_cnt_bak[token])
             
     def remove_specified_tokens(self, list_tokens_to_remove, regex_to_remove=[]):
         """ pattern_int = re.compile(r'^[0-9]+$')
@@ -172,8 +167,8 @@ class Vocab(object):
         list_patterns = [re.compile(item) for item in regex_to_remove]
         #
         filtered_tokens = []
-        for idd in range(self.size()):
-            token = self.dict_id2token[idd]
+        for idx in range(self.size()):
+            token = self.dict_id2token[idx]
             #
             if token in list_tokens_to_remove: continue
             for pattern in list_patterns:
@@ -181,12 +176,17 @@ class Vocab(object):
             #
             filtered_tokens.append(token)
             #
+        #
         # rebuild the token ~ id map
         self.dict_token2id = {}
         self.dict_id2token = {}
+        dict_token_cnt_bak = self.dict_token_cnt
+        self.dict_token_cnt = {}
+        #
         self._add_predefined_and_initial_tokens()
         for token in filtered_tokens:
-            self.add(token, cnt=0)
+            self.add(token, cnt=dict_token_cnt_bak[token])
+        #
         
     #
     def randomly_init_embeddings(self, emb_dim):

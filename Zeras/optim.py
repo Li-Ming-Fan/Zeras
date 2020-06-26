@@ -6,6 +6,15 @@ import tensorflow as tf
 from tensorflow.python.ops import state_ops
 
 #
+def constant_lr(settings, global_step):
+    """
+    """
+    learning_rate = tf.constant(value = settings.learning_rate_base,
+                                shape = [], dtype = tf.float32)
+    return learning_rate
+    #
+
+#
 def linear_warmup_and_exp_decayed_lr(settings, global_step):
     """ settings.learning_rate_base
         settings.warmup_steps
@@ -90,16 +99,23 @@ def linear_warmup_and_polynomial_decayed_lr(settings, global_step):
     #
     return learning_rate
     #
-    
+
+#
 def adam_optimizer(settings, learning_rate_tensor_or_value):
     """ 
-        customized_optimizer = get_adam_optimizer
+        customized_optimizer = adam_optimizer
         self._opt = self.customized_optimizer(self.settings, self.learning_rate_tensor)
         
         grad_and_vars = self._opt.compute_gradients(self.loss_train_tensor)
         self.train_op = self._opt.apply_gradients(grad_and_vars, global_step = self.global_step)
     """
-    opt = tf.train.AdamOptimizer(learning_rate_tensor_or_value, beta1 = settings.momentum)
+    #
+    if "beta_1" in settings.__dict__.keys():
+        beta_1 = settings.beta_1
+    else:
+        beta_1 = 0.9
+    #
+    opt = tf.train.AdamOptimizer(learning_rate_tensor_or_value, beta1 = beta_1)
     return opt
     #
 
@@ -196,11 +212,20 @@ class AdamWeightDecayOptimizer(tf.train.Optimizer):
 def adam_wd_optimizer(settings, learning_rate_tensor_or_value):
     """
     """
+    if "beta_1" in settings.__dict__.keys():
+        beta_1 = settings.beta_1
+    else:
+        beta_1 = 0.9
+    #
+    if "beta_2" in settings.__dict__.keys():
+        beta_2 = settings.beta_2
+    else:
+        beta_2 = 0.999
+    #
     opt = AdamWeightDecayOptimizer(learning_rate_tensor_or_value,
                         weight_decay_rate = settings.reg_lambda,
                         exclusions_from_weight_decay = settings.reg_exclusions,
-                        beta_1 = settings.beta_1, beta_2 = settings.beta_2,
-                        epsilon = 1e-6)
+                        beta_1 = beta_1, beta_2 = beta_2, epsilon = 1e-6)
     #
     return opt
     #

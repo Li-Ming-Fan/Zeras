@@ -10,10 +10,11 @@ Common to tf and torch:
 ```
 from Zeras.data_parallelism import DataParallelism, get_files_with_ext
 from Zeras.data_batcher import DataBatcher
+from Zeras.data_paral_batcher import DataParalBatcher
 
 from Zeras.vocab import Vocab
 
-from Zeras.model_settings_baseboard import ModelSettingsBaseboard
+from Zeras.settings_baseboard import SettingsBaseboard
 ```
 
 
